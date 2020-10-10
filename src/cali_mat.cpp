@@ -23,9 +23,9 @@ FileStorage &operator,(FileStorage &out, const T &data) {
 
 int main(int argc, char *argv[])
 {
-    // -d 参数，总文件夹，应该包括result，left，right三个子文件夹
+
     cv::CommandLineParser parser(argc, argv,
-                                 "{{d|/media/qzj/Document/grow/research/slamDataSet/sweepRobot/round2/cali|}{show|true|}{help||}");
+                                 "{w|11|}{h|8|}{s|15|}{d|/media/qzj/Document/grow/research/slamDataSet/sweepRobot/round3/cali|}{show|true|}{help||}");
     if (parser.has("help")) {
         parser.printMessage();
         return 0;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     string root_result_path = root_path + "/result/";
     createDirectory(root_result_path);
 
-    //读入matlab保存的yaml
+    //YAML::Node fsSettings = YAML::LoadFile(root_result_path + "cali_mat_new.yaml");
     YAML::Node fsSettings = YAML::LoadFile(root_result_path + "cali_mat.yaml");
 
     cv::Mat K_l, K_r, D_l, D_r,T_lr,R_lr;
@@ -49,7 +49,8 @@ int main(int argc, char *argv[])
         {
             K_l.row(i).col(j) = fsSettings["K1"][i][j].as<double>();
             K_r.row(i).col(j) = fsSettings["K2"][i][j].as<double>();
-            R_lr.row(i).col(j) = fsSettings["rot"][i][j].as<double>();
+            // 应该填入 相机1到相机2的旋转矩阵,
+            R_lr.row(i).col(j) = fsSettings["rot2"][i][j].as<double>();
         }
 
     D_l = Mat::ones(5, 1, CV_64F);
@@ -61,17 +62,22 @@ int main(int argc, char *argv[])
             D_r.row(i).col(j) = fsSettings["D2"][i].as<double>();
         }
 
-    size.height = fsSettings["size"][0].as<float>();
-    size.width = fsSettings["size"][1].as<float>();
+    size.width = fsSettings["size"][0].as<float>();
+    size.height = fsSettings["size"][1].as<float>();
 
     T_lr = Mat::ones(3, 1, CV_64F);
     for(int i=0;i<3;i++)
         for(int j=0;j<1;j++)
         {
-            T_lr.row(i).col(j) = fsSettings["trans"][i].as<double>();
+            // 应该填入 相机1到相机2的平移量, x轴是负的
+            T_lr.row(i).col(j) = fsSettings["trans2"][i].as<double>();
         }
 
     cout << "finish input" << endl;
+    //cout<<R_lr<<endl;
+    //R_lr=R_lr.t();
+    //cout<<R_lr<<endl;
+    //T_lr = T_lr/10;
 
     int rows_l = size.height;
     int cols_l = size.width;
@@ -83,10 +89,10 @@ int main(int argc, char *argv[])
     cv::Rect validROIL;
     cv::Rect validROIR;
     //经过双目标定得到摄像头的各项参数后，采用OpenCV中的stereoRectify(立体校正)得到校正旋转矩阵R、投影矩阵P、重投影矩阵Q
-    //flags-可选的标志有两种零或者 CV_CALIB_ZERO_DISPARITY ,如果设置 CV_CALIB_ZERO_DISPARITY 的话，该函数会让两幅校正后的图像的主点有相同的像素坐标。否则该函数会水平或垂直的移动图像，以使得其有用的范围最大
-    //alpha-拉伸参数。如果设置为负或忽略，将不进行拉伸。如果设置为0，那么校正后图像只有有效的部分会被显示（没有黑色的部分），如果设置为1，那么就会显示整个图像。设置为0~1之间的某个值，其效果也居于两者之间。
+    //flags-可选的标志有两种零或者 CV_CALIB_ZERO_DISPARITY ,如果设置 CV_CALIB_ZERO_DISPARITY 的话，该函数会让两幅校正后的图像的主点有相同的像素坐标。否则该函数会水平或垂直的移动图像，以使得其有用的范围最大,其中， CALIB_ZERO_DISPARITY 和 (CALIB_ZERO_DISPARITY|CALIB_FIX_INTRINSIC) 是等效的
+    // alpha-拉伸参数。-1:图像被拉伸，会有黑边.如果设置为0，那么校正后图像只有有效的部分会被显示（没有黑色的部分），如果设置为1，那么就会显示整个图像。设置为0~1之间的某个值，其效果也居于两者之间。该参数对slam没有太多影响。但设置为0比较好
     cout << "finish rectify" << endl;
-    stereoRectify(K_l, D_l, K_r, D_r, imageSize, R_lr, T_lr, Rl, Rr, Pl, Pr, Q, cv::CALIB_FIX_INTRINSIC,
+    stereoRectify(K_l, D_l, K_r, D_r, imageSize, R_lr, T_lr, Rl, Rr, Pl, Pr, Q, cv::CALIB_ZERO_DISPARITY,
                   0, imageSize, &validROIL, &validROIR);
     cout << "finish rectify" << endl;
     //cout<<Pl<<endl;
@@ -98,8 +104,7 @@ int main(int argc, char *argv[])
     cv::initUndistortRectifyMap(K_r,D_r,Rr,Pr.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,M1r,M2r);
 
     cout << "finish rectify" << endl;
-    //保存详细标定参数，这里参照ORB-SLAM的参数文件格式
-    string configYaml = root_result_path + "data_params_matlab.yaml";
+    string configYaml = root_result_path + "robot_stereo_new.yaml";
     FileStorage storage(configYaml, FileStorage::WRITE);
     storage <<
             "Camera_fx", Pr.row(0).col(0).at<double>(),
@@ -111,12 +116,12 @@ int main(int argc, char *argv[])
             "Camera_p1", 0,
             "Camera_p2", 0,
 
-            "Camera_width", 640,
-            "Camera_height", 480,
-            "Camera_fps", 50.0,
+            "Camera_width", size.width,
+            "Camera_height", size.height,
+            "Camera_fps", 20.0,
             "Camera_bf", (abs(Pr.row(0).col(3).at<double>()/1000.0)),
             "Camera_RGB", 1,
-            "ThDepth", 50,
+            "ThDepth", 35,
 
             "LEFT_height", size.height,
             "LEFT_width", size.width,
@@ -148,6 +153,7 @@ int main(int argc, char *argv[])
             "Viewer_ViewpointZ", -1.8,
             "Viewer_ViewpointF", 500;
     storage.release();
-    //检查标定效果
-    CheckStereoCali(root_path, configYaml);
+    //根据你自己的情况设定，这里写存放left和right的文件夹
+    string subDir = "/cali_cam";
+    CheckStereoCali(root_path + subDir, configYaml);
 }

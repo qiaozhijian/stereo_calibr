@@ -25,7 +25,7 @@ endif()
 
 # 为了方便查看调试信息
 IF(CMAKE_COMPILER_IS_GNUCC)
-    message("CMAKE_COMPILER_IS_GNUCC")
+    message("CMAKE_COMPILER_IS_GNUCC DEBUG")
     #   针对debug
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
@@ -70,3 +70,7 @@ target_link_libraries( cali_mat mylib)
 add_executable( check src/check.cpp )
 # 链接OpenCV库
 target_link_libraries( check mylib)
+
+add_executable( file src/file.cpp )
+# 链接OpenCV库
+target_link_libraries( file mylib)

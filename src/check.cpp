@@ -13,7 +13,7 @@
 using namespace cv;
 using namespace std;
 
-// 检查标定效果的文件
+
 int main(int argc, char *argv[]) {
     cv::CommandLineParser parser(argc, argv,
                                  "{w|11|}{h|8|}{s|15|}{d|/media/qzj/Document/grow/research/slamDataSet/sweepRobot/round2/cali|}{show|true|}{help||}");
@@ -21,13 +21,10 @@ int main(int argc, char *argv[]) {
         parser.printMessage();
         return 0;
     }
-    //读入总文件夹
     string root_path = parser.get<string>("d");
     string root_result_path = root_path + "/result/";
-    //创建文件夹
     createDirectory(root_result_path);
-    //选用参数文件
     string configYaml = root_result_path + "data_params_matlab.yaml";
-     //可视化
+
      CheckStereoCali(root_path, configYaml);
 }

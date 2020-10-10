@@ -297,7 +297,6 @@ FileStorage &operator,(FileStorage &out, const T &data) {
 }
 
 int main(int argc, char *argv[]) {
-    //-d 图片存放文件夹
     cv::CommandLineParser parser(argc, argv,
                                  "{w|11|}{h|8|}{s|15|}{d|/media/qzj/Document/grow/research/slamDataSet/sweepRobot/round2/cali|}{show|true|}{help||}");
     if (parser.has("help")) {
@@ -356,7 +355,7 @@ int main(int argc, char *argv[]) {
                                                    imageSize, R, T, R1, R2, P1, P2, Q, mapl1, mapl2, mapr1, mapr2);
     cout << "finish stereo Rectification" << endl;
 
-    //保存参数
+
     FileStorage storage(root_result_path + "data_params.yaml", FileStorage::WRITE);
     storage <<
             "Camera_fx", P2.row(0).col(0),
