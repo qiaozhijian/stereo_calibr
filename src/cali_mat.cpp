@@ -24,19 +24,12 @@ FileStorage &operator,(FileStorage &out, const T &data) {
 int main(int argc, char *argv[])
 {
 
-    cv::CommandLineParser parser(argc, argv,
-                                 "{w|11|}{h|8|}{s|15|}{d|/media/qzj/Document/grow/research/slamDataSet/sweepRobot/round3/cali|}{show|true|}{help||}");
-    if (parser.has("help")) {
-        parser.printMessage();
-        return 0;
-    }
-    string root_path = parser.get<string>("d");
+    string root_path = "/media/qzj/Dataset/code/calibration/stereo_calibr/dataset/stereo0";
     string root_result_path = root_path + "/result/";
     createDirectory(root_result_path);
 
     //YAML::Node fsSettings = YAML::LoadFile(root_result_path + "cali_mat_new.yaml");
-    YAML::Node fsSettings = YAML::LoadFile(root_result_path + "cali_mat.yaml");
-
+    YAML::Node fsSettings = YAML::LoadFile(root_result_path + "cali_matlab.yaml");
     cv::Mat K_l, K_r, D_l, D_r,T_lr,R_lr;
     cv::Mat Rl, Rr, Pl, Pr, Q; //校正旋转矩阵R，投影矩阵P 重投影矩阵Q
     cv::Size size;
@@ -62,8 +55,8 @@ int main(int argc, char *argv[])
             D_r.row(i).col(j) = fsSettings["D2"][i].as<double>();
         }
 
-    size.width = fsSettings["size"][0].as<float>();
-    size.height = fsSettings["size"][1].as<float>();
+    size.height = fsSettings["size"][0].as<float>();
+    size.width = fsSettings["size"][1].as<float>();
 
     T_lr = Mat::ones(3, 1, CV_64F);
     for(int i=0;i<3;i++)
@@ -154,6 +147,5 @@ int main(int argc, char *argv[])
             "Viewer_ViewpointF", 500;
     storage.release();
     //根据你自己的情况设定，这里写存放left和right的文件夹
-    string subDir = "/cali_cam";
-    CheckStereoCali(root_path + subDir, configYaml);
+//    CheckStereoCali(root_path, configYaml);
 }

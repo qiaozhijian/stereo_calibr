@@ -32,7 +32,7 @@ IF(CMAKE_COMPILER_IS_GNUCC)
 ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
 # 寻找OpenCV库
-find_package( OpenCV 3 REQUIRED PATHS /usr/local/opencv-3.4.5)
+find_package( OpenCV 3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS regex thread system filesystem)
 # YAML library
 FIND_PACKAGE(yaml-cpp REQUIRED CONFIG PATHS ${YAML_PATHS})
